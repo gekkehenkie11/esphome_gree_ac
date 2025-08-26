@@ -647,8 +647,8 @@ void SinclairACCNT::handle_packet()
         }
 
         //delete below
-        for (int i = 47; i < 51; i++)
-            ESP_LOGV(TAG, "Stamp1: %lx", lastpacket[i]);
+        for (int i = 38; i < 48; i++)
+            ESP_LOGV(TAG, "Stamp1: %lx", this->serialProcess_.data[i]);
         //delete above
         
         for (int i = 8; i < 11; i++)
