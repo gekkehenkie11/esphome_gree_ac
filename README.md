@@ -2,14 +2,15 @@
 This repository adds support for ESP-based WiFi modules to interface with Gree/Sinclair AC units.
 It's forked from https://github.com/piotrva/esphome_gree_ac, big thanks to @piotrva for his work!
 
-My fork currently differs from the original code in the following ways:
+My fork currently differs from the original code in the following ways. What I did:
 
-1) I fixed the fan mode, tested on Gree/Daizuki/TGM AC's.
-2) I fixed the dropping of commands
-3) I fixed the rejection of commands
-4) I implemented an optional silent mode (no beeping), only works for module sent commands (not for
+1) Fixed the fan mode, tested on Gree/Daizuki/TGM AC's.
+2) Fixed the dropping of commands
+3) Fixed the rejection of commands
+4) Fixed reporting of current temp
+5) Fixed the Fahrenheit mode
+6) Implemented an optional silent mode (no beeping), only works for module sent commands (not for
    remote control sent commands)
-5) Implemented a fahrenheit mode (untested though, cant test until late august myself)   
    
 It's now compatible with GRJWB04-J / Cs532ae wifi modules
 
