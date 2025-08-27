@@ -361,15 +361,11 @@ void SinclairAC::set_save_switch(switch_::Switch *save_switch)
 
 void SinclairAC::log_packet(std::vector<uint8_t> data, bool outgoing)
 {
-    if (!outgoing)
-        ESP_LOGV(TAG, "RX: %s", format_hex_pretty(data).c_str());
-    
-  /*  if (outgoing) {
+    if (outgoing) {
         ESP_LOGV(TAG, "TX: %s", format_hex_pretty(data).c_str());
     } else {
         ESP_LOGV(TAG, "RX: %s", format_hex_pretty(data).c_str());
     }
-*/
 }
 
 }  // namespace sinclair_ac
