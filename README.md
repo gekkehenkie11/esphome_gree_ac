@@ -27,7 +27,8 @@ Create a new project in the ESPbuilder from Home assistant and use my YAML (from
 Then you should be able to compile it. I think you can flash directly from Home Assistant,
 but I downloaded the compiled binary and flashed with: https://github.com/esphome/esphome-flasher/releases
 
-See the 2 photos for wiring (for flashing and the wiring for connecting it to your AC).
+See the 2 photos for wiring (for flashing and the wiring for connecting it to your AC). The connector is a 4 pins “JST XARP-04V”, you can for example order them here: https://es.aliexpress.com/item/1005009830663057.html. Alternatively it's possible to just use dupont cables and then put tape around the 4 ends to simulate the form of a connector (so that it makes it thicker), so that it will sit still in the connector socket, but make sure all 4 cables make connection, I tried that first and you might need to make adjustments because of 1 cable nog making solid connection (this might result in errors in the log). So best to use the real connector.
+
 
 After you've connected the module to your AC, it should pop under settings/integrations/esphome as a 'new device' and then you can add it to HA. If not, check if it started a WIFI access point, which it will do if it can't connect to your home wifi. You can then connect to that and configure it from there (via 192.168.4.1)
 
