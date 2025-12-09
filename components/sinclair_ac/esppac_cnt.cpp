@@ -128,12 +128,12 @@ void SinclairACCNT::control(const climate::ClimateCall &call)
         }
     }
 
-    if (call.get_custom_fan_mode().has_value())
+    if (call.has_custom_fan_mode())
     {
         ESP_LOGV(TAG, "Requested fan mode change");
         reqmodechange = true;
         this->update_ = ACUpdate::UpdateStart;
-        this->custom_fan_mode = *call.get_custom_fan_mode();
+        this->set_custom_fan_mode_(call.get_custom_fan_mode());
     }
 
     if (call.get_swing_mode().has_value())
