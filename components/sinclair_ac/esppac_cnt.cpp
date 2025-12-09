@@ -274,58 +274,62 @@ void SinclairACCNT::send_packet()
     uint8_t fanSpeed2 = 0;
     bool    fanQuiet  = false;
     bool    fanTurbo  = false;
+    if (this->has_custom_fan_mode())
+    {
+        const char* custom_fan_mode = this->get_custom_fan_mode();
 
-    if (this->custom_fan_mode == fan_modes::FAN_AUTO)
-    {
-        fanSpeed1 = 0;
-        fanSpeed2 = 0;
-        fanQuiet  = false;
-        fanTurbo  = false;
-    }
-    else if (this->custom_fan_mode == fan_modes::FAN_LOW)
-    {
-        fanSpeed1 = 1;
-        fanSpeed2 = 1;
-        fanQuiet  = false;
-        fanTurbo  = false;
-        packet[protocol::REPORT_FAN_SPD2_BYTE] |= 1;
-    }
-/*    else if (this->custom_fan_mode == fan_modes::FAN_QUIET)
-    {
-        fanSpeed1 = 1;
-        fanSpeed2 = 1;
-        fanQuiet  = true;
-        fanTurbo  = false;
-    } */
-    else if (this->custom_fan_mode == fan_modes::FAN_MED)
-    {
-        fanSpeed1 = 3;
-        fanSpeed2 = 2;
-        fanQuiet  = false;
-        fanTurbo  = false;
-        packet[protocol::REPORT_FAN_SPD2_BYTE] |= 2;
-    }
-    else if (this->custom_fan_mode == fan_modes::FAN_HIGH)
-    {
-        fanSpeed1 = 5;
-        fanSpeed2 = 3;
-        fanQuiet  = false;
-        fanTurbo  = false;
-        packet[protocol::REPORT_FAN_SPD2_BYTE] |= 3;
-    }
-    else if (this->custom_fan_mode == fan_modes::FAN_TURBO)
-    {
-        fanSpeed1 = 5;
-        fanSpeed2 = 3;
-        fanQuiet  = false;
-        fanTurbo  = true;
-    }
-    else
-    {
-        fanSpeed1 = 0;
-        fanSpeed2 = 0;
-        fanQuiet  = false;
-        fanTurbo  = false;
+        if (strcmp(custom_fan_mode, fan_modes::FAN_AUTO) == 0)
+        {
+            fanSpeed1 = 0;
+            fanSpeed2 = 0;
+            fanQuiet  = false;
+            fanTurbo  = false;
+        }
+        else if (strcmp(custom_fan_mode, fan_modes::FAN_LOW) == 0)
+        {
+            fanSpeed1 = 1;
+            fanSpeed2 = 1;
+            fanQuiet  = false;
+            fanTurbo  = false;
+            packet[protocol::REPORT_FAN_SPD2_BYTE] |= 1;
+        }
+/*        else if (strcmp(custom_fan_mode, fan_modes::FAN_QUIET) == 0)
+        {
+            fanSpeed1 = 1;
+            fanSpeed2 = 1;
+            fanQuiet  = true;
+            fanTurbo  = false;
+        } */
+        else if (strcmp(custom_fan_mode, fan_modes::FAN_MED) == 0)
+	{
+            fanSpeed1 = 3;
+            fanSpeed2 = 2;
+            fanQuiet  = false;
+            fanTurbo  = false;
+	    packet[protocol::REPORT_FAN_SPD2_BYTE] |= 2;
+        }
+        else if (strcmp(custom_fan_mode, fan_modes::FAN_HIGH) == 0)
+        {
+            fanSpeed1 = 5;
+            fanSpeed2 = 3;
+            fanQuiet  = false;
+            fanTurbo  = false;
+	    packet[protocol::REPORT_FAN_SPD2_BYTE] |= 3;
+        }
+        else if (strcmp(custom_fan_mode, fan_modes::FAN_TURBO) == 0)
+        {
+            fanSpeed1 = 5;
+            fanSpeed2 = 3;
+            fanQuiet  = false;
+            fanTurbo  = true;
+        }
+        else
+        {
+            fanSpeed1 = 0;
+            fanSpeed2 = 0;
+            fanQuiet  = false;
+            fanTurbo  = false;
+        }
     }
 
     // packet[protocol::REPORT_FAN_SPD1_BYTE] |= (fanSpeed1 << protocol::REPORT_FAN_SPD1_POS);
