@@ -821,7 +821,7 @@ climate::ClimateMode SinclairACCNT::determine_mode()
     }
 }
 
-std::string SinclairACCNT::determine_fan_mode()
+const char* SinclairACCNT::determine_fan_mode()
 {
     /* fan setting has quite complex representation in the packet, brace for it */
    // uint8_t fanSpeed1 = (this->serialProcess_.data[protocol::REPORT_FAN_SPD1_BYTE]  & protocol::REPORT_FAN_SPD1_MASK) >> protocol::REPORT_FAN_SPD1_POS;
