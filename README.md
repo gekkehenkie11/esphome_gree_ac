@@ -33,3 +33,8 @@ See the 4 module cable photos for wiring (for flashing and the wiring for connec
 After you've connected the module to your AC, it should pop under settings/integrations/esphome as a 'new device' and then you can add it to HA. If not, check if it started a WIFI access point, which it will do if it can't connect to your home wifi. You can then connect to that and configure it from there (via 192.168.4.1)
 
 **USE AT YOUR OWN RISK!**
+
+**************
+Update
+**************
+I have a Sinclair Keyon SIH-07BIK and Sinclair Keyon SIH-18BIK where I needed to add a few adjustments for it to work + I have also Ikea VINDSTYRKA which I would like to use as an external sensor for monitoring the temperature. 
