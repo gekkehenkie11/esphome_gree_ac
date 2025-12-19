@@ -293,13 +293,14 @@ void SinclairACCNT::send_packet()
             fanTurbo  = false;
             packet[protocol::REPORT_FAN_SPD2_BYTE] |= 1;
         }
-/*        else if (strcmp(custom_fan_mode, fan_modes::FAN_QUIET) == 0)
+        /* enabled for testing */
+        else if (strcmp(custom_fan_mode, fan_modes::FAN_QUIET) == 0)
         {
             fanSpeed1 = 1;
             fanSpeed2 = 1;
             fanQuiet  = true;
             fanTurbo  = false;
-        } */
+        } 
         else if (strcmp(custom_fan_mode, fan_modes::FAN_MED) == 0)
 	{
             fanSpeed1 = 3;

@@ -9,13 +9,15 @@ esphome:
   name: gree
   friendly_name: "Gree AC"
 
-esp8266:
-  board: esp01_1m
+esp32:
+  board: lolin_d32
+  framework:
+        type: esp-idf
 
 # Enable Home Assistant API
 api:
   encryption:
-    key: "[insert yours]"
+    key: "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="
 
 ota:
   - platform: esphome
@@ -37,9 +39,18 @@ logger:
   baud_rate: 0 # disable LOG output on UART as UART is used for Sinclair AC unit
   level: VERBOSE
 
+# Read a Home Assistant entity into ESPHome and expose it as a sensor
+sensor:
+  - platform: homeassistant
+    id: ext_room_temp
+    entity_id: your_room_temperature_sensor.value
+
+
+# On Lolin D32, UART pins are: TX=17, RX=16
+# Do not use pins RX/TX on GPIOS 1 and 3 
 uart:
-  tx_pin: 1
-  rx_pin: 3
+  tx_pin: 17
+  rx_pin: 16
   baud_rate: 4800
   parity: EVEN
 
@@ -47,7 +58,7 @@ time:
   - platform: sntp
 
 external_components:
-  - source: github://gekkehenkie11/esphome_gree_ac
+  - source: github://hexaradian/esphome_gree_ac
     components: [sinclair_ac]
     refresh: 0s
 
@@ -64,12 +75,14 @@ climate:
       name: ${devicename} Display Unit
     plasma_switch:
       name: ${devicename} Plasma
-    beeper_switch:
-      name: ${devicename} Beeper      
+    # My Unit does not like the beeper command
+    #beeper_switch:
+    #  name: ${devicename} Beeper     
     sleep_switch:
       name: ${devicename} Sleep
     xfan_switch:
       name: ${devicename} X-fan
     save_switch:
       name: ${devicename} Save/8 Heat  
+    current_temperature_sensor: ext_room_temp
     
