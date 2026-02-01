@@ -266,7 +266,7 @@ void SinclairAC::set_vertical_swing_select(select::Select *vertical_swing_select
         auto selected = this->vertical_swing_select_->at(index);
         if (!selected.has_value())
             return;
-        auto &value = selected.value();{
+        auto &value = selected.value();
         if (value == this->vertical_swing_state_)
             return;
         this->on_vertical_swing_change(value);
