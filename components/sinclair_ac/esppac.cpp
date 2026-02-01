@@ -276,7 +276,7 @@ void SinclairAC::set_vertical_swing_select(select::Select *vertical_swing_select
 void SinclairAC::set_horizontal_swing_select(select::Select *horizontal_swing_select)
 {
     this->horizontal_swing_select_ = horizontal_swing_select;
-  this->horizontal_swing_select_->add_on_state_callback([this](size_t index) {
+    this->horizontal_swing_select_->add_on_state_callback([this](size_t index) {
         auto selected = this->horizontal_swing_select_->at(index);
         if (!selected.has_value())
             return;
