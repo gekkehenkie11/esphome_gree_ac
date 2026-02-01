@@ -137,7 +137,7 @@ void SinclairAC::update_swing_horizontal(const std::string &swing)
     this->horizontal_swing_state_ = swing;
 
     if (this->horizontal_swing_select_ != nullptr &&
-        this->horizontal_swing_select_->state != this->horizontal_swing_state_)
+        this->horizontal_swing_select_->current_option().str() != this->horizontal_swing_state_)
     {
         this->horizontal_swing_select_->publish_state(this->horizontal_swing_state_);
     }
@@ -148,7 +148,7 @@ void SinclairAC::update_swing_vertical(const std::string &swing)
     this->vertical_swing_state_ = swing;
 
     if (this->vertical_swing_select_ != nullptr && 
-        this->vertical_swing_select_->state != this->vertical_swing_state_)
+         this->vertical_swing_select_->current_option().str() != this->vertical_swing_state_)
     {
         this->vertical_swing_select_->publish_state(this->vertical_swing_state_);
     }
@@ -159,7 +159,7 @@ void SinclairAC::update_display(const std::string &display)
     this->display_state_ = display;
 
     if (this->display_select_ != nullptr && 
-        this->display_select_->state != this->display_state_)
+        this->display_select_->current_option().str() != this->display_state_)
     {
         this->display_select_->publish_state(this->display_state_);
     }
@@ -170,7 +170,7 @@ void SinclairAC::update_display_unit(const std::string &display_unit)
     this->display_unit_state_ = display_unit;
 
     if (this->display_unit_select_ != nullptr && 
-        this->display_unit_select_->state != this->display_unit_state_)
+        this->display_unit_select_->current_option().str() != this->display_unit_state_)
     {
         this->display_unit_select_->publish_state(this->display_unit_state_);
     }
