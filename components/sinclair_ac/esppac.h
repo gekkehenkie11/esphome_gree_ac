@@ -1,6 +1,7 @@
 // based on: https://github.com/DomiStyle/esphome-panasonic-ac
 #pragma once
 
+#include <array>
 #include "esphome/components/climate/climate.h"
 #include "esphome/components/select/select.h"
 #include "esphome/components/sensor/sensor.h"
@@ -22,12 +23,34 @@ static const float TEMPERATURE_STEP = 1.0;   // Steps the temperature can be set
 static const float TEMPERATURE_TOLERANCE = 2;  // The tolerance to allow when checking the climate state
 static const uint8_t TEMPERATURE_THRESHOLD = 100;  // Maximum temperature the AC can report (formally 119.5 for sinclair protocol, but 100 is impossible, soo...)
 
-namespace fan_modes{
-    const char* const FAN_AUTO  = "0 - Auto";
-    const char* const FAN_LOW   = "1 - Low";
-    const char* const FAN_MED   = "2 - Medium";
-    const char* const FAN_HIGH  = "3 - High";
-    const char* const FAN_TURBO = "4 - Turbo";
+/* Fan modes setup - because different units may use slightly different values
+*/
+namespace fan_modes {
+    struct FanModeConfig {
+       climate::ClimateFanMode name;
+       int sp1;
+       int sp2;
+    };
+
+    constexpr FanModeConfig FAN_AUTO     = { climate::CLIMATE_FAN_AUTO,     0, 0 };
+    constexpr FanModeConfig FAN_LOW      = { climate::CLIMATE_FAN_LOW,      1, 1 };
+    constexpr FanModeConfig FAN_MED      = { climate::CLIMATE_FAN_MEDIUM,   3, 2 };
+    constexpr FanModeConfig FAN_HIGH     = { climate::CLIMATE_FAN_HIGH,     5, 3 };
+    constexpr FanModeConfig FAN_QUIET    = { climate::CLIMATE_FAN_QUIET,    1, 1 };
+
+    constexpr std::array<FanModeConfig, 5> ALL_MODES = {
+        FAN_AUTO, FAN_LOW, FAN_MED, FAN_HIGH, FAN_QUIET
+    };
+
+    constexpr FanModeConfig get(climate::ClimateFanMode mode) {
+        for (const auto& config : ALL_MODES) {
+            if (config.name == mode) {
+                return config;
+            }
+        }
+
+        return { esphome::climate::CLIMATE_FAN_AUTO, 0, 0 };
+    }
 }
 
 /* this must be same as HORIZONTAL_SWING_OPTIONS in climate.py */

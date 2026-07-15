@@ -116,6 +116,7 @@ void SinclairACCNT::control(const climate::ClimateCall &call)
     if (call.get_target_temperature().has_value())
     {
         ESP_LOGV(TAG, "Requested target teperature change");
+        reqmodechange = true;
         this->update_ = ACUpdate::UpdateStart;
         this->target_temperature = *call.get_target_temperature();
         if (this->target_temperature < MIN_TEMPERATURE)
@@ -128,12 +129,20 @@ void SinclairACCNT::control(const climate::ClimateCall &call)
         }
     }
 
-    if (call.has_custom_fan_mode())
+    if (call.get_fan_mode().has_value())
     {
         ESP_LOGV(TAG, "Requested fan mode change");
         reqmodechange = true;
         this->update_ = ACUpdate::UpdateStart;
-        this->set_custom_fan_mode_(call.get_custom_fan_mode());
+        this->fan_mode = call.get_fan_mode().value();
+    }
+
+    if (call.get_preset().has_value())
+    {
+        ESP_LOGV(TAG, "Requested preset change");
+        reqmodechange = true;
+        this->update_ = ACUpdate::UpdateStart;
+        this->preset = call.get_preset().value();
     }
 
     if (call.get_swing_mode().has_value())
@@ -273,80 +282,33 @@ void SinclairACCNT::send_packet()
 
     /* FAN SPEED --------------------------------------------------------------------------- */
     /* below will default to AUTO */
-    uint8_t fanSpeed1 = 0;
-    uint8_t fanSpeed2 = 0;
+    uint8_t fanSpeed1 = fan_modes::FAN_AUTO.sp1;
+    uint8_t fanSpeed2 = fan_modes::FAN_AUTO.sp2;
     bool    fanQuiet  = false;
-    bool    fanTurbo  = false;
-    if (this->has_custom_fan_mode())
-    {
-        const char* custom_fan_mode = this->get_custom_fan_mode().c_str();
 
-        if (strcmp(custom_fan_mode, fan_modes::FAN_AUTO) == 0)
-        {
-            fanSpeed1 = 0;
-            fanSpeed2 = 0;
-            fanQuiet  = false;
-            fanTurbo  = false;
-        }
-        else if (strcmp(custom_fan_mode, fan_modes::FAN_LOW) == 0)
-        {
-            fanSpeed1 = 1;
-            fanSpeed2 = 1;
-            fanQuiet  = false;
-            fanTurbo  = false;
-            packet[protocol::REPORT_FAN_SPD2_BYTE] |= 1;
-        }
-/*        else if (strcmp(custom_fan_mode, fan_modes::FAN_QUIET) == 0)
-        {
-            fanSpeed1 = 1;
-            fanSpeed2 = 1;
-            fanQuiet  = true;
-            fanTurbo  = false;
-        } */
-        else if (strcmp(custom_fan_mode, fan_modes::FAN_MED) == 0)
-	{
-            fanSpeed1 = 3;
-            fanSpeed2 = 2;
-            fanQuiet  = false;
-            fanTurbo  = false;
-	    packet[protocol::REPORT_FAN_SPD2_BYTE] |= 2;
-        }
-        else if (strcmp(custom_fan_mode, fan_modes::FAN_HIGH) == 0)
-        {
-            fanSpeed1 = 5;
-            fanSpeed2 = 3;
-            fanQuiet  = false;
-            fanTurbo  = false;
-	    packet[protocol::REPORT_FAN_SPD2_BYTE] |= 3;
-        }
-        else if (strcmp(custom_fan_mode, fan_modes::FAN_TURBO) == 0)
-        {
-            fanSpeed1 = 5;
-            fanSpeed2 = 3;
-            fanQuiet  = false;
-            fanTurbo  = true;
-        }
-        else
-        {
-            fanSpeed1 = 0;
-            fanSpeed2 = 0;
-            fanQuiet  = false;
-            fanTurbo  = false;
-        }
+    fan_modes::FanModeConfig fmc = fan_modes::get(
+        this->fan_mode.value_or(climate::CLIMATE_FAN_AUTO));
+    fanSpeed1 = fmc.sp1;
+    fanSpeed2 = fmc.sp2;
+    if (fmc.name == climate::CLIMATE_FAN_QUIET) {
+      packet[protocol::REPORT_FAN_QUIET_BYTE] |= protocol::REPORT_FAN_QUIET_MASK;
     }
 
-    // packet[protocol::REPORT_FAN_SPD1_BYTE] |= (fanSpeed1 << protocol::REPORT_FAN_SPD1_POS);
-    // packet[protocol::REPORT_FAN_SPD2_BYTE] |= (fanSpeed2 << protocol::REPORT_FAN_SPD2_POS);
+    packet[protocol::REPORT_FAN_SPD1_BYTE] |= (fanSpeed1 << protocol::REPORT_FAN_SPD1_POS);
+    packet[protocol::REPORT_FAN_SPD2_BYTE] |= (fanSpeed2 << protocol::REPORT_FAN_SPD2_POS);
     
-   
-    
-    if (fanTurbo)
+   /* PRESET ------------------------------------------------------------------------------------ */
+   /* In HA, boost and sleep are presets, however in Gree's domain, they're merely a fan profile
+      and a boolean switch to flip over.
+   */
+    if (this->preset == climate::CLIMATE_PRESET_BOOST)
     {
-        packet[protocol::REPORT_FAN_TURBO_BYTE] |= protocol::REPORT_FAN_TURBO_MASK;
+        //fanSpeed1 = 5;
+        //fanSpeed2 = 3;
+        packet[protocol::REPORT_FAN_TURBO_BYTE] |= protocol::REPORT_FAN_TURBO_MASK;  
     }
-    if (fanQuiet)
-    {
-        packet[protocol::REPORT_FAN_QUIET_BYTE] |= protocol::REPORT_FAN_QUIET_MASK;
+    if (this->preset == climate::CLIMATE_PRESET_SLEEP) {
+        packet[protocol::REPORT_SLEEP_BYTE] |= protocol::REPORT_SLEEP_MASK;
     }
 
     /* VERTICAL SWING --------------------------------------------------------------------------- */
@@ -518,12 +480,6 @@ void SinclairACCNT::send_packet()
     if (!this->beeper_state_)
     {
         packet[protocol::REPORT_BEEPER_BYTE] |= protocol::REPORT_BEEPER_MASK;
-    }
-
-    /* SLEEP --------------------------------------------------------------------------- */
-    if (this->sleep_state_)
-    {
-        packet[protocol::REPORT_SLEEP_BYTE] |= protocol::REPORT_SLEEP_MASK;
     }
 
     /* XFAN --------------------------------------------------------------------------- */
@@ -701,16 +657,18 @@ bool SinclairACCNT::processUnitReport()
     if (this->mode != newMode) hasChanged = true;
     this->mode = newMode;
 
-    const char* newFanMode = determine_fan_mode();
-    if (this->has_custom_fan_mode())
-    {
-        if (strcmp(this->get_custom_fan_mode().c_str(), newFanMode) != 0) hasChanged = true;;
-    }
-    else
+    climate::ClimateFanMode newFanMode = determine_fan_mode();
+    if (this->fan_mode != newFanMode)
     {
         hasChanged = true;
     }
-    this->set_custom_fan_mode_(newFanMode);
+    this->fan_mode = newFanMode;
+
+    climate::ClimatePreset newPreset = determine_preset();
+    if (this->preset != newPreset)
+      hasChanged = true;
+    this->preset = newPreset;
+
     
     //float newTargetTemperature = (float)(((this->serialProcess_.data[protocol::REPORT_TEMP_SET_BYTE] & protocol::REPORT_TEMP_SET_MASK) >> protocol::REPORT_TEMP_SET_POS)
      //   + protocol::REPORT_TEMP_SET_OFF);
@@ -824,72 +782,36 @@ climate::ClimateMode SinclairACCNT::determine_mode()
     }
 }
 
-const char* SinclairACCNT::determine_fan_mode()
+climate::ClimateFanMode SinclairACCNT::determine_fan_mode()
 {
     /* fan setting has quite complex representation in the packet, brace for it */
-   // uint8_t fanSpeed1 = (this->serialProcess_.data[protocol::REPORT_FAN_SPD1_BYTE]  & protocol::REPORT_FAN_SPD1_MASK) >> protocol::REPORT_FAN_SPD1_POS;
-    //uint8_t fanSpeed2 = (this->serialProcess_.data[protocol::REPORT_FAN_SPD2_BYTE]  & protocol::REPORT_FAN_SPD2_MASK) >> protocol::REPORT_FAN_SPD2_POS;
-    //bool    fanQuiet  = (this->serialProcess_.data[protocol::REPORT_FAN_QUIET_BYTE] & protocol::REPORT_FAN_QUIET_MASK) != 0;
+    uint8_t fanSpeed1 = (this->serialProcess_.data[protocol::REPORT_FAN_SPD1_BYTE]  & protocol::REPORT_FAN_SPD1_MASK) >> protocol::REPORT_FAN_SPD1_POS;
+    uint8_t fanSpeed2 = (this->serialProcess_.data[protocol::REPORT_FAN_SPD2_BYTE]  & protocol::REPORT_FAN_SPD2_MASK) >> protocol::REPORT_FAN_SPD2_POS;
+    bool fanQuiet  = (this->serialProcess_.data[protocol::REPORT_FAN_QUIET_BYTE] & protocol::REPORT_FAN_QUIET_MASK) != 0;
+
+    for (const auto& mode : fan_modes::ALL_MODES) {
+       if (fanSpeed1 == mode.sp1 && fanSpeed2 == mode.sp2) {
+         return mode.name;                
+         break;
+       }
+    }
+
+    ESP_LOGW(TAG, "Received unknown fan mode: fanSpeed1=%d, fansSpeed2=%d", fanSpeed1, fanSpeed2);
+    return fan_modes::FAN_AUTO.name;
     
-    bool    fanTurbo  = (this->serialProcess_.data[protocol::REPORT_FAN_TURBO_BYTE] & protocol::REPORT_FAN_TURBO_MASK) != 0;
-    uint8_t fan_mode = (this->serialProcess_.data[protocol::REPORT_FAN_SPD2_BYTE] & protocol::REPORT_FAN_MODE_MASK);
+}
+
+climate::ClimatePreset SinclairACCNT::determine_preset()
+{
+    bool fanTurbo = (this->serialProcess_.data[protocol::REPORT_FAN_TURBO_BYTE] & protocol::REPORT_FAN_TURBO_MASK) != 0;
+    bool sleep = (this->serialProcess_.data[protocol::REPORT_SLEEP_BYTE] & protocol::REPORT_SLEEP_MASK) != 0;
 
     if (fanTurbo)
-        return fan_modes::FAN_TURBO;
-    else if (fan_mode == 0)
-        return fan_modes::FAN_AUTO;
-    else if (fan_mode == 1)
-        return fan_modes::FAN_LOW;
-    else if (fan_mode == 2)
-        return fan_modes::FAN_MED;
-    else if (fan_mode == 3)
-        return fan_modes::FAN_HIGH;
-    else 
-    {
-        ESP_LOGW(TAG, "Received unknown fan mode");
-        return fan_modes::FAN_AUTO;
-    }
-    
-    /* we have extracted all the data, let's do the processing */
-    /*
-    if      (fanSpeed1 == 0 && fanSpeed2 == 0 && fanQuiet == false && fanTurbo == false)
-    {
-        return fan_modes::FAN_AUTO;
-    }
-    else if (fanSpeed1 == 1 && fanSpeed2 == 1 && fanQuiet == false && fanTurbo == false)
-    {
-        return fan_modes::FAN_LOW;
-    }
-    else if (fanSpeed1 == 1 && fanSpeed2 == 1 && fanQuiet == true  && fanTurbo == false)
-    {
-        return fan_modes::FAN_QUIET;
-    }
-    else if (fanSpeed1 == 2 && fanSpeed2 == 2 && fanQuiet == false && fanTurbo == false)
-    {
-        return fan_modes::FAN_MEDL;
-    }
-    else if (fanSpeed1 == 3 && fanSpeed2 == 2 && fanQuiet == false && fanTurbo == false)
-    {
-        return fan_modes::FAN_MED;
-    }
-    else if (fanSpeed1 == 4 && fanSpeed2 == 3 && fanQuiet == false && fanTurbo == false)
-    {
-        return fan_modes::FAN_MEDH;
-    }
-    else if (fanSpeed1 == 5 && fanSpeed2 == 3 && fanQuiet == false && fanTurbo == false)
-    {
-        return fan_modes::FAN_HIGH;
-    }
-    else if (fanSpeed1 == 5 && fanSpeed2 == 3 && fanQuiet == false && fanTurbo == true )
-    {
-        return fan_modes::FAN_TURBO;
-    }
-    else 
-    {
-        ESP_LOGW(TAG, "Received unknown fan mode");
-        return fan_modes::FAN_AUTO;
-    }
-    */
+        return climate::CLIMATE_PRESET_BOOST;
+    else if (sleep)
+        return climate::CLIMATE_PRESET_SLEEP;
+    else
+        return climate::CLIMATE_PRESET_NONE;
 }
 
 std::string SinclairACCNT::determine_vertical_swing()
