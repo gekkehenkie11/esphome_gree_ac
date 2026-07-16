@@ -144,6 +144,7 @@ namespace protocol {
     /* time constraints */
     static const unsigned long TIME_REFRESH_PERIOD_MS   =  300;
     static const unsigned long TIME_TIMEOUT_INACTIVE_MS = 1000;
+    static const unsigned long TIME_WAIT_RESPONSE_MS    = 10000;
 }
 
 /* Define packets from AC that would be processed by software */

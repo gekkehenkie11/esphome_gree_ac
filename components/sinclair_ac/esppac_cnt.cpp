@@ -82,6 +82,16 @@ void SinclairACCNT::loop()
         }
     }
 
+    /* AC power-cycle leaves wait_response_ stuck with no reply; clear after 10s so polling resumes */
+    if (this->wait_response_ &&
+        (millis() - this->last_packet_sent_ >= protocol::TIME_WAIT_RESPONSE_MS))
+    {
+        ESP_LOGW(TAG, "No response for %lu ms, clearing wait and resetting RX",
+                 protocol::TIME_WAIT_RESPONSE_MS);
+        this->wait_response_ = false;
+        this->serialProcess_.state = STATE_RESTART;
+    }
+
     /* we will send a packet to the AC as a reponse to indicate changes */
     send_packet();
 
