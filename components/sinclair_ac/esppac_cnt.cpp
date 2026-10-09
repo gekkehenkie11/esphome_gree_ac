@@ -178,6 +178,17 @@ void SinclairACCNT::send_packet()
 {
     std::vector<uint8_t> packet(protocol::SET_PACKET_LEN, 0);  /* Initialize packet contents */
 
+   /* The AC did not answer our last packet: stop waiting and send again.
+      If that packet was a change (0xAF), send the change again too. */
+   if (this->wait_response_ == true && (millis() - this->last_packet_sent_ >= protocol::TIME_RESPONSE_TIMEOUT_MS))
+   {
+       this->wait_response_ = false;
+       if (this->update_ == ACUpdate::UpdateClear)
+       {
+           this->update_ = ACUpdate::UpdateStart;
+       }
+   }
+
     if (this->wait_response_ == true || (millis() - this->last_packet_sent_ < protocol::TIME_REFRESH_PERIOD_MS))
     {
         /* do net send packet too often or when we are waiting for report to come */
