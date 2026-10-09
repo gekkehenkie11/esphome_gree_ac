@@ -12,6 +12,26 @@ esphome:
 esp8266:
   board: esp01_1m
 
+globals:
+  - id: last_rx_ms
+    type: uint32_t
+    initial_value: '0'
+
+interval:
+  - interval: 2s
+    then:
+      - if:
+          condition:
+            lambda: 'return millis() - id(last_rx_ms) > 3000;'
+          then:
+            - uart.write:
+                id: ac_uart
+                data: [0x7E, 0x7E, 0x2F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x91, 0x40,
+                       0x06, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0E,
+                       0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18]
+
 # Enable Home Assistant API
 api:
   encryption:
@@ -39,11 +59,19 @@ logger:
   level: VERBOSE
 
 uart:
+  id: ac_uart
   tx_pin: 1
   rx_pin: 3
   baud_rate: 4800
   parity: EVEN
-
+  debug:
+    direction: RX
+    dummy_receiver: false
+    after:
+      timeout: 50ms
+    sequence:
+      - lambda: id(last_rx_ms) = millis();
+      
 time:
   - platform: sntp
 
