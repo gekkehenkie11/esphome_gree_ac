@@ -149,6 +149,8 @@ namespace protocol {
 /* Define packets from AC that would be processed by software */
 const std::vector<uint8_t> allowedPackets = {protocol::CMD_IN_UNIT_REPORT};
 
+static const unsigned long TIME_RESPONSE_TIMEOUT_MS = 500;  /* no reply after this: poll again */
+
 class SinclairACCNT : public SinclairAC {
     public:
         void control(const climate::ClimateCall &call) override;
