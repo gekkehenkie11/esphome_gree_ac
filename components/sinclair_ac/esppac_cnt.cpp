@@ -169,6 +169,7 @@ void SinclairACCNT::control(const climate::ClimateCall &call)
                 break;
         }
     }
+    this->defer([this]() { this->publish_state(); });
 }
 
 /*
