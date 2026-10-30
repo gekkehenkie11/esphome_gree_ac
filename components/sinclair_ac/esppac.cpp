@@ -23,6 +23,16 @@ climate::ClimateTraits SinclairAC::traits()
     traits.set_supported_swing_modes({climate::CLIMATE_SWING_OFF, climate::CLIMATE_SWING_BOTH,
                                       climate::CLIMATE_SWING_VERTICAL, climate::CLIMATE_SWING_HORIZONTAL});
 
+    traits.set_supported_presets({
+     climate::CLIMATE_PRESET_NONE,
+     climate::CLIMATE_PRESET_BOOST,
+     climate::CLIMATE_PRESET_SLEEP
+    });
+    
+    for (const auto& mode : fan_modes::ALL_MODES) {
+        traits.add_supported_fan_mode(mode.name);
+    }
+
     return traits;
 }
 
@@ -31,8 +41,6 @@ void SinclairAC::setup()
   // Initialize times
     this->init_time_ = millis();
     this->last_packet_sent_ = millis();
-    this->set_supported_custom_fan_modes({fan_modes::FAN_AUTO, fan_modes::FAN_LOW,
-                                          fan_modes::FAN_MED, fan_modes::FAN_HIGH, fan_modes::FAN_TURBO});
 
     ESP_LOGI(TAG, "Sinclair AC component v%s starting...", VERSION);
 }
@@ -53,6 +61,13 @@ void SinclairAC::read_data()
         }
         uint8_t c;
         this->read_byte(&c);  // Store in receive buffer
+        /*
+        ESP_LOGD("sinclair_ac",
+         "RX state=%d size=%d byte=0x%02X",
+         this->serialProcess_.state,
+         this->serialProcess_.data.size(),
+         c);
+         */
 
         if (this->serialProcess_.state == STATE_RESTART)
         {
