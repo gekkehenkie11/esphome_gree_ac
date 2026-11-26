@@ -1,7 +1,9 @@
 // based on: https://github.com/DomiStyle/esphome-panasonic-ac
 #include "gree_ac_cnt.h"
+#include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
 #include "esphome/core/util.h"
+#include <cmath>
 #include <cstring>
 #include <cstdio>
 
@@ -152,7 +154,7 @@ void GreeACCNT::control(const climate::ClimateCall &call)
         ESP_LOGV(TAG, "Requested fan mode change");
         this->mark_for_update_();
         this->fan_mode = *call.get_fan_mode();
-        this->set_custom_fan_mode_("");
+        this->clear_custom_fan_mode_();
 
         /* Requirement 3: When the fan mode gets changed while turbo is on, the turbo mode must be deactivated.
            Also for quiet mode. */

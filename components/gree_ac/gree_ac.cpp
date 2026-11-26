@@ -1,6 +1,7 @@
 // based on: https://github.com/DomiStyle/esphome-panasonic-ac
 #include "gree_ac.h"
 
+#include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
 
 namespace esphome {
@@ -32,13 +33,13 @@ climate::ClimateTraits GreeAC::traits()
     traits.set_supported_fan_modes({climate::CLIMATE_FAN_AUTO, climate::CLIMATE_FAN_LOW,
                                     climate::CLIMATE_FAN_MEDIUM, climate::CLIMATE_FAN_HIGH});
 
-    traits.set_supported_custom_fan_modes({fan_modes::FAN_MIN, fan_modes::FAN_MAX});
-
     return traits;
 }
 
 void GreeAC::setup()
 {
+    this->set_supported_custom_fan_modes({fan_modes::FAN_MIN, fan_modes::FAN_MAX});
+
   // Initialize times
     this->init_time_ = millis();
     this->last_packet_sent_ = millis();
@@ -173,7 +174,7 @@ bool GreeAC::update_fan_mode(const std::string &fan_mode)
     if (this->fan_mode == new_fan_mode && this->get_custom_fan_mode().empty())
         return false;
 
-    this->set_custom_fan_mode_("");
+    this->clear_custom_fan_mode_();
     this->fan_mode = new_fan_mode;
     return true;
 }
@@ -557,7 +558,8 @@ void GreeAC::log_packet(const uint8_t *data, size_t len, bool outgoing)
     } else {
         prefix = " RX :";
     }
-    ESP_LOGD(TAG, "%s %s", prefix, format_hex_pretty(data, len).c_str());
+    char hex_buf[format_hex_pretty_size(sizeof(SerialProcess_t::data))];
+    ESP_LOGD(TAG, "%s %s", prefix, format_hex_pretty_to(hex_buf, sizeof(hex_buf), data, len, '.'));
 #endif
 }
 
